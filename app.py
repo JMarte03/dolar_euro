@@ -1,56 +1,40 @@
 from flask import Flask, Response
 from flask_cors import CORS
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 import os
 import json
 
 def load_currency_data():
     url = "https://www.conectate.com.do/articulo/precio-del-dolar-euro-rd-tasa-de-hoy/"
-
-    # Configurar Chrome en modo headless
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-
-    # Iniciar WebDriver
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    result = []
 
     try:
-        print(f"[DEBUG] Requesting URL: {url}")
-        driver.get(url)
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(url, timeout=60000)
+            page.wait_for_selector("table.widget_currency_table", timeout=30000)
 
-        # Obtener el HTML renderizado
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        tables = soup.find_all("table", class_="widget_currency_table")
-        print(f"[DEBUG] Found {len(tables)} tables")
+            tables = page.query_selector_all("table.widget_currency_table")
+            print(f"[DEBUG] Found {len(tables)} tables")
 
-        result = []
+            for table in tables:
+                tds = table.query_selector_all("td.text-center")
+                if len(tds) >= 4:
+                    block = {
+                        "moneda": tds[0].inner_text().strip(),
+                        "ayer": tds[1].inner_text().strip(),
+                        "hoy": tds[2].inner_text().strip(),
+                        "diff": tds[3].inner_text().strip()
+                    }
+                    result.append(block)
 
-        for table in tables:
-            tds = table.find_all("td", class_="text-center")
-            if len(tds) >= 4:
-                block = {
-                    "moneda": tds[0].text.strip(),
-                    "ayer": tds[1].text.strip(),
-                    "hoy": tds[2].text.strip(),
-                    "diff": tds[3].text.strip()
-                }
-                result.append(block)
-
-        return result
+            browser.close()
 
     except Exception as e:
         print(f"[ERROR] Failed to load data: {e}")
-        return []
 
-    finally:
-        driver.quit()
+    return result
 
 def JsonUFT8(data=None):
     json_string = json.dumps(data, ensure_ascii=False)
@@ -65,5 +49,4 @@ def monedas_scraping():
     data = load_currency_data()
     return JsonUFT8(data)
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=port)
+app.run(host='0.0.0.0', port=port)
