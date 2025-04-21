@@ -1,0 +1,4 @@
+beautifulsoup4
+flask
+flask-cors
+requestspip install selenium webdriver-manager flask flask-cors
