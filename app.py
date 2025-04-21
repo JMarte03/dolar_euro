@@ -3,6 +3,7 @@ from flask_cors import CORS
 from playwright.sync_api import sync_playwright
 import os
 import json
+import time
 
 def load_currency_data():
     url = "https://www.conectate.com.do/articulo/precio-del-dolar-euro-rd-tasa-de-hoy/"
@@ -13,10 +14,21 @@ def load_currency_data():
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
             page.goto(url, timeout=60000)
+
+            # Espera inicial
             page.wait_for_selector("table.widget_currency_table", timeout=30000)
 
+            # Esperar hasta que ambas tablas estén disponibles (máximo 10s)
+            max_wait = 10
+            waited = 0
             tables = page.query_selector_all("table.widget_currency_table")
-            print(f"[DEBUG] Found {len(tables)} tables")
+            while len(tables) < 2 and waited < max_wait:
+                print(f"[DEBUG] Solo {len(tables)} tabla(s) encontradas. Esperando más...")
+                time.sleep(1)
+                waited += 1
+                tables = page.query_selector_all("table.widget_currency_table")
+
+            print(f"[DEBUG] Se encontraron {len(tables)} tabla(s)")
 
             for table in tables:
                 tds = table.query_selector_all("td.text-center")
