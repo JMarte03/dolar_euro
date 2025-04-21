@@ -54,7 +54,7 @@ def JsonUFT8(data=None):
 
 app = Flask(__name__)
 CORS(app)
-port = int(os.environ.get("PORT", 1717))
+port = int(os.environ.get("PORT", 10000))
 
 @app.route("/ping", methods=['GET'])
 def healthcheck():
