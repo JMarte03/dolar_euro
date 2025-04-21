@@ -56,9 +56,14 @@ app = Flask(__name__)
 CORS(app)
 port = int(os.environ.get("PORT", 1717))
 
+@app.route("/ping", methods=['GET'])
+def healthcheck():
+    return "pong"
+
 @app.route("/", methods=['GET'])
 def monedas_scraping():
     data = load_currency_data()
     return JsonUFT8(data)
 
+print(f"[INFO] Starting server on port {port}")
 app.run(host='0.0.0.0', port=port)
