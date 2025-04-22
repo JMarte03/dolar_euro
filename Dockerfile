@@ -17,4 +17,5 @@ RUN pip install playwright && playwright install --with-deps
 
 EXPOSE 10000  
 
-CMD ["python", "app.py"]
+CMD ["gunicorn", "-b", "0.0.0.0:10000", "app:app"]
+

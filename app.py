@@ -66,4 +66,4 @@ def monedas_scraping():
     return JsonUFT8(data)
 
 print(f"[INFO] Starting server on port {port}")
-app.run(host='0.0.0.0', port=port)
+# app.run(host='0.0.0.0', port=port)
